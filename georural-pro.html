@@ -832,8 +832,12 @@ function limparTudo() {
 }
 
 function formatarData(d) {
-  if (!d) return 'N/D';
-  try { return new Date(d).toLocaleDateString('pt-BR'); } catch { return d; }
+  if (!d || d === 'N/D' || d === '—' || d === null || d === undefined) return '—';
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return '—';
+    return dt.toLocaleDateString('pt-BR');
+  } catch { return '—'; }
 }
 
 // ─── MAPA MAPBOX ──────────────────────────────────────────
