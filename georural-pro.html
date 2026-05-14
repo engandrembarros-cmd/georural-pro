@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -289,6 +288,7 @@ footer strong{color:var(--vd4)}
         <button class="btn btn-verde" onclick="baixarKML('sigef')">🗺 KML — SIGEF</button>
         <button class="btn btn-out" onclick="baixarKML('sicar')">🗺 KML — CAR</button>
         <button class="btn btn-out" onclick="baixarKML('embargo')">🚨 KML — Embargo</button>
+        <button class="btn btn-cinza" id="btn-ver-sigef" style="display:none">🌐 Ver ficha completa no SIGEF</button>
       </div>
       <div class="hint" style="margin-top:.8rem">PDF inclui: dados do imóvel, situação CAR, alertas MapBiomas e assinatura do responsável técnico.</div>
     </div>
@@ -626,17 +626,46 @@ function atualizarFonteMapBiomas(m) {
 function renderizarResultado(sigef, sicar, mapb) {
   const p = sigef.feature?.properties||{};
   document.getElementById('nome-imovel').textContent = (p.nome_imovel||'Imóvel Rural')+(sigef.demo?' ⚙ modo demonstração':'');
+
+  // Proprietário — SIGEF pode retornar em campos variados
+  const proprietario = p.nome_proprietario || p.proprietario || p.responsavel || p.titular || 'Protegido (LGPD)';
+  const matricula = p.numero_matricula || p.matricula || p.cod_matricula || 'Ver no SIGEF →';
+  const dataRegistro = p.data_registro || p.data_abertura_matricula || '—';
+  const situacaoCar = sicar.situacao || 'N/D';
+
   const campos = [
-    ['Código SIGEF',p.codigo_imovel||'N/D'],['Área SIGEF',parseFloat(p.area_ha||0).toFixed(4)+' ha'],
-    ['Município/UF',(p.municipio_nome||'')+'/GO'],['Status SIGEF',p.status||'CERTIFICADO'],
-    ['Código CAR',sicar.cod_car||'N/D'],['Área CAR',sicar.area_total+' ha'],
-    ['APP',sicar.area_app+' ha'],['Reserva Legal',sicar.area_rl+' ha'],
-    ['Mód. Fiscais',sicar.modulos_fiscais+''],['Sit. CAR',sicar.situacao||'N/D'],
-    ['Embargos',(mapb.alertas?.length||0)>0?mapb.alertas.length+' alerta(s)':'Nenhum'],
-    ['Certif. SIGEF',formatarData(p.data_certificacao)],
+    ['Código SIGEF', p.codigo_imovel||'N/D'],
+    ['Nome do Imóvel', p.nome_imovel||'N/D'],
+    ['Área Total (SIGEF)', parseFloat(p.area_ha||0).toFixed(4)+' ha'],
+    ['Município/UF', (p.municipio_nome||'')+'/'+( p.uf||'GO')],
+    ['Status SIGEF', p.status||'CERTIFICADO'],
+    ['Data Certificação', formatarData(p.data_certificacao)],
+    ['Data Registro', formatarData(dataRegistro)],
+    ['Matrícula', matricula],
+    ['Proprietário', proprietario],
+    ['Cód. INCRA', p.codigo_incra||p.cod_incra||'N/D'],
+    ['Código CAR', sicar.cod_car||'N/D'],
+    ['Área CAR', sicar.area_total+' ha'],
+    ['APP', sicar.area_app+' ha'],
+    ['Reserva Legal', sicar.area_rl+' ha'],
+    ['Módulos Fiscais', sicar.modulos_fiscais+''],
+    ['Situação CAR', situacaoCar],
+    ['Sob. Terra Indígena', sicar.sobreposicao_ti?'⚠ SIM':'Não'],
+    ['Sob. Unid. Conserv.', sicar.sobreposicao_uc?'⚠ SIM':'Não'],
+    ['Embargos MapBiomas', (mapb.alertas?.length||0)>0?'🚨 '+mapb.alertas.length+' alerta(s)':'✅ Nenhum'],
+    ['Vértices SIGEF', contarVertices(sigef.feature?.geometry)],
   ];
+
   document.getElementById('info-grid').innerHTML = campos.map(([l,v]) =>
-    `<div class="info-item"><div class="info-lbl">${l}</div><div class="info-val ${v.includes('alerta')?'red':''}">${v}</div></div>`).join('');
+    `<div class="info-item"><div class="info-lbl">${l}</div><div class="info-val ${v.toString().includes('alerta')||v.toString().includes('SIM')?'red':v.toString().includes('✅')?'green':''}">${v}</div></div>`).join('');
+
+  // Botão Ver no SIGEF
+  const codSigef = (p.codigo_imovel||'').replace(/\//g,'');
+  const btnSigef = document.getElementById('btn-ver-sigef');
+  if (btnSigef) {
+    btnSigef.style.display = 'inline-flex';
+    btnSigef.onclick = () => window.open(`https://sigef.incra.gov.br/sigef/parcela/${codSigef}/detalhe/`,'_blank');
+  }
 
   const n = mapb.alertas?.length||0;
   const card = document.getElementById('card-alertas');
@@ -646,8 +675,14 @@ function renderizarResultado(sigef, sicar, mapb) {
     card.style.display='block';
   } else card.style.display='none';
 
-  // Renderizar mapa Mapbox
   renderizarMapa(sigef, sicar, mapb);
+}
+
+function contarVertices(geometry) {
+  if (!geometry) return 'N/D';
+  if (geometry.type==='Polygon') return (geometry.coordinates[0].length-1)+' vértices';
+  if (geometry.type==='MultiPolygon') return geometry.coordinates.reduce((a,p)=>a+p[0].length-1,0)+' vértices';
+  return 'N/D';
 }
 
 function adicionarHistorico(sigef, sicar, mapb) {
