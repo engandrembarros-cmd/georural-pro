@@ -1,4 +1,4 @@
-import twilio from 'twilio';
+const twilio = require('twilio');
 
 const TWILIO_ACCOUNT_SID = 'ACcfba9f73512525e422513488d7e71955';
 const TWILIO_AUTH_TOKEN = 'a7cebea7fc4b2161542a233f83e9bc66';
@@ -7,7 +7,7 @@ const SUPABASE_URL = 'https://bzqcflkadvtbuvjtrkrr.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_8snotXBoCOArE8cZ-YQbWg_X0U9GKpN';
 const SITE_URL = 'https://georural-pro-two.vercel.app';
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const { Body, From, Latitude, Longitude, NumMedia } = req.body;
