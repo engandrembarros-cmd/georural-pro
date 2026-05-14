@@ -8,7 +8,14 @@ export default async function handler(req, res) {
   try {
     let url;
     if (codigo) {
-      url = `https://sigef.incra.gov.br/geo/wfs/?service=WFS&version=1.1.0&request=GetFeature&typeName=parcela:parcela_certificada_lote&CQL_FILTER=codigo_imovel='${codigo}'&outputFormat=application/json&srsName=EPSG:4326`;
+      // UUID de certificação SIGEF — ex: c2f838eb-d9c2-462f-b0a9-802a039f4e8a
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(codigo.trim());
+      if (isUUID) {
+        url = `https://sigef.incra.gov.br/geo/wfs/?service=WFS&version=1.1.0&request=GetFeature&typeName=parcela:parcela_certificada_lote&CQL_FILTER=id='${codigo.trim()}'&outputFormat=application/json&srsName=EPSG:4326`;
+      } else {
+        // Tenta por código de imóvel texto
+        url = `https://sigef.incra.gov.br/geo/wfs/?service=WFS&version=1.1.0&request=GetFeature&typeName=parcela:parcela_certificada_lote&CQL_FILTER=codigo_imovel='${codigo.trim()}'&outputFormat=application/json&srsName=EPSG:4326`;
+      }
     } else {
       const r = parseFloat(raio || 500);
       const d = r / 111320;
