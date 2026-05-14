@@ -1,5 +1,8 @@
 {
   "rewrites": [
+    { "source": "/api/sigef", "destination": "/api/sigef" },
+    { "source": "/api/sicar", "destination": "/api/sicar" },
+    { "source": "/api/mapbiomas", "destination": "/api/mapbiomas" },
     { "source": "/(.*)", "destination": "/georural-pro.html" }
   ]
 }
